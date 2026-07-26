@@ -25,7 +25,7 @@ export function Form() {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${BACKEND_URL}/api/v1/pre-interview`, {
+            const response = await axios.post(`${BACKEND_URL}/api/v1/interview`, {
                 github: github.trim(),
             });
             router.push(`/interview/${response.data.id}`);

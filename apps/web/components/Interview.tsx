@@ -94,7 +94,7 @@ export function Interview() {
                 const received = JSON.parse(message.data);
                 const transcript = received.channel?.alternatives[0]?.transcript;
                 if (transcript) {
-                    axios.post(`${BACKEND_URL}/api/v1/session/user/response/${interviewId}`, {
+                    axios.post(`${BACKEND_URL}/api/v1/interview/${interviewId}/message`, {
                         message: transcript,
                     });
                 }
