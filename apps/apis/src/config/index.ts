@@ -5,8 +5,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().url(),
   OPENAI_KEY: z.string().min(1),
-  GEMINI_API_KEY: z.string().min(1),
-  PROXY_URL: z.string().url().optional(),
+  GEMINI_API_KEY: z.string().min(1).optional(),
+  PROXY_URL: z.string().url().or(z.literal("")).transform(v => v || undefined).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

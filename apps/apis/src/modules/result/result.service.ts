@@ -4,8 +4,6 @@ import { config } from "../../config";
 import { prisma } from "@repo/db";
 import { logger } from "../../lib/logger";
 
-const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
-
 const outputSchema = z.object({
   feedback: z.string().describe("Feedback for the user"),
   score: z.number().int().describe("Score out of 10 for their interview"),
@@ -25,7 +23,11 @@ const RESULT_PROMPT = `
     {{USER_TRANSCRIPT}}
 `;
 
-async function calculateResult(messages: { type: "Assistant" | "User"; message: string; createdAt: Date }[]) {
+type EvaluationResult = z.infer<typeof outputSchema>;
+
+async function evaluateWithGemini(messages: { type: "Assistant" | "User"; message: string; createdAt: Date }[]): Promise<EvaluationResult> {
+  const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY! });
+
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash",
     contents: RESULT_PROMPT.replace("{{USER_TRANSCRIPT}}", JSON.stringify(messages)),
@@ -36,8 +38,43 @@ async function calculateResult(messages: { type: "Assistant" | "User"; message: 
   });
 
   logger.info("Gemini evaluation complete");
-  const result = outputSchema.parse(JSON.parse(response.text!));
-  return result;
+  return outputSchema.parse(JSON.parse(response.text!));
+}
+
+async function evaluateWithOpenAI(messages: { type: "Assistant" | "User"; message: string; createdAt: Date }[]): Promise<EvaluationResult> {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.OPENAI_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: RESULT_PROMPT.replace("{{USER_TRANSCRIPT}}", JSON.stringify(messages)) },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    logger.error("OpenAI evaluation error", { status: response.status, body });
+    throw new Error(`OpenAI evaluation failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  logger.info("OpenAI evaluation complete");
+  return outputSchema.parse(JSON.parse(data.choices[0].message.content));
+}
+
+async function calculateResult(messages: { type: "Assistant" | "User"; message: string; createdAt: Date }[]): Promise<EvaluationResult> {
+  if (config.GEMINI_API_KEY) {
+    return evaluateWithGemini(messages);
+  }
+
+  logger.info("Gemini key not found, falling back to OpenAI for evaluation");
+  return evaluateWithOpenAI(messages);
 }
 
 export async function getResult(interviewId: string) {
