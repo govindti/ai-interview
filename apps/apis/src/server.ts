@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import app from "./app";
 import { config } from "./config";
-import { prisma } from "./lib/prisma";
+import { prisma } from "@repo/db";
 import { logger } from "./lib/logger";
 
 const server = createServer(app);

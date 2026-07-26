@@ -1,31 +1,11 @@
-import { chromium } from "playwright";
+import { chromium, type Browser } from "playwright";
 
-const PORT = Number(process.env.LINKEDIN_PROXY_PORT ?? process.env.PORT ?? 3002);
 const DEFAULT_TARGET = "https://www.linkedin.com/";
 const REQUEST_TIMEOUT_MS = Number(process.env.LINKEDIN_TIMEOUT_MS ?? 45_000);
 const DEFAULT_DATAIMPULSE_HOST = "gw.dataimpulse.com";
 const DEFAULT_DATAIMPULSE_PORT = "823";
 
-function cleanHeaderValue(value) {
-  return value.replace(/[\r\n]/g, "");
-}
-
-function normalizeLinkedInUrl(value) {
-  const url = new URL(value || DEFAULT_TARGET);
-  const hostname = url.hostname.toLowerCase();
-
-  if (!["http:", "https:"].includes(url.protocol)) {
-    throw new Error("Only http and https URLs are supported");
-  }
-
-  if (hostname !== "linkedin.com" && !hostname.endsWith(".linkedin.com")) {
-    throw new Error("Only linkedin.com URLs are allowed");
-  }
-
-  return url.toString();
-}
-
-function decodeUrlPart(value) {
+function decodeUrlPart(value: string | undefined): string | undefined {
   if (!value) return undefined;
 
   try {
@@ -66,7 +46,7 @@ function getDataImpulseProxy() {
   proxyUrl.username = "";
   proxyUrl.password = "";
 
-  const proxy = {
+  const proxy: { server: string; username?: string; password?: string } = {
     server: proxyUrl.toString().replace(/\/$/, ""),
   };
 
@@ -82,17 +62,38 @@ function getDataImpulseProxy() {
   return proxy;
 }
 
-function statusForResponse(status) {
-  return Number.isInteger(status) && status >= 200 && status <= 599 ? status : 200;
+export function normalizeLinkedInUrl(value: string | null): string {
+  const url = new URL(value || DEFAULT_TARGET);
+  const hostname = url.hostname.toLowerCase();
+
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("Only http and https URLs are supported");
+  }
+
+  if (hostname !== "linkedin.com" && !hostname.endsWith(".linkedin.com")) {
+    throw new Error("Only linkedin.com URLs are allowed");
+  }
+
+  return url.toString();
 }
 
-async function scrapeLinkedIn(targetUrl) {
-  const browser = await chromium.launch({
-    headless: process.env.HEADLESS !== "false",
-    proxy: getDataImpulseProxy(),
-  });
+export interface LinkedInScrapeResult {
+  status: number;
+  requestedUrl: string;
+  finalUrl: string;
+  title: string;
+  html: string;
+}
+
+export async function scrapeLinkedIn(targetUrl: string): Promise<LinkedInScrapeResult> {
+  let browser: Browser | null = null;
 
   try {
+    browser = await chromium.launch({
+      headless: process.env.HEADLESS !== "false",
+      proxy: getDataImpulseProxy(),
+    });
+
     const context = await browser.newContext({
       locale: "en-US",
       userAgent:
@@ -116,48 +117,6 @@ async function scrapeLinkedIn(targetUrl) {
       html: await page.content(),
     };
   } finally {
-    await browser.close();
+    await browser?.close();
   }
 }
-
-Bun.serve({
-  port: PORT,
-  idleTimeout: Math.ceil(REQUEST_TIMEOUT_MS / 1000) + 15,
-  async fetch(request) {
-    const requestUrl = new URL(request.url);
-
-    if (requestUrl.pathname !== "/linkedin") {
-      return Response.json({
-        message: "Use GET /linkedin?url=https://www.linkedin.com/in/example",
-      });
-    }
-
-    if (request.method !== "GET") {
-      return Response.json({ error: "Method not allowed" }, { status: 405 });
-    }
-
-    try {
-      const targetUrl = normalizeLinkedInUrl(requestUrl.searchParams.get("url"));
-      const result = await scrapeLinkedIn(targetUrl);
-
-      if (requestUrl.searchParams.get("format") === "html") {
-        return new Response(result.html, {
-          status: statusForResponse(result.status),
-          headers: {
-            "content-type": "text/html; charset=utf-8",
-            "x-linkedin-final-url": cleanHeaderValue(result.finalUrl),
-          },
-        });
-      }
-
-      return Response.json(result, { status: statusForResponse(result.status) });
-    } catch (error) {
-      return Response.json(
-        { error: error instanceof Error ? error.message : "Failed to scrape LinkedIn" },
-        { status: 500 },
-      );
-    }
-  },
-});
-
-console.log(`LinkedIn proxy listening on http://localhost:${PORT}/linkedin`);

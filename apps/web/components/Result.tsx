@@ -5,13 +5,13 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Bot, Loader2, Sparkles, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { Button } from "@repo/ui/button";
+import { Badge } from "@repo/ui/badge";
+import { Card, CardContent, CardHeader } from "@repo/ui/card";
+import { Separator } from "@repo/ui/separator";
+import { ScrollArea } from "@repo/ui/scroll-area";
+import { Progress } from "@repo/ui/progress";
+import { cn } from "@repo/ui/utils";
 
 interface ResultData {
     transcript: { type: "Assistant" | "User"; content: string; createdAt: string }[];

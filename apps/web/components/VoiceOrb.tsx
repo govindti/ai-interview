@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@repo/ui/utils";
 import type { LucideIcon } from "lucide-react";
 
 interface VoiceOrbProps {

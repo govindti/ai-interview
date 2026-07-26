@@ -5,8 +5,8 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Bot, Loader2, PhoneOff, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Badge } from "@repo/ui/badge";
 import { VoiceOrb } from "@/components/VoiceOrb";
 
 type Status = "connecting" | "live" | "ending";

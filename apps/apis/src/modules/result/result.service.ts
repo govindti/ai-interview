@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { GoogleGenAI } from "@google/genai";
 import { config } from "../../config";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@repo/db";
 import { logger } from "../../lib/logger";
 
 const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });

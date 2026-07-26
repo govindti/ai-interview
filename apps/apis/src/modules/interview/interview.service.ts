@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@repo/db";
 import { scrapeGithub } from "../../scrapers/github";
 import { NotFoundError } from "../../lib/errors";
 

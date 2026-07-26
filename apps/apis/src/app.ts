@@ -8,6 +8,7 @@ import { notFound } from "./middleware/not-found";
 import interviewRoutes from "./modules/interview/interview.routes";
 import sessionRoutes from "./modules/session/session.routes";
 import resultRoutes from "./modules/result/result.routes";
+import linkedinRoutes from "./modules/linkedin/linkedin.routes";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/interview", interviewRoutes);
 app.use("/api/v1/session", sessionRoutes);
 app.use("/api/v1/result", resultRoutes);
+app.use("/api/v1/linkedin", linkedinRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

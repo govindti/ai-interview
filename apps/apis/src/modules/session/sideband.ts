@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@repo/db";
 import { logger } from "../../lib/logger";
 
 export async function initSideband(callId: string, interviewId: string) {
