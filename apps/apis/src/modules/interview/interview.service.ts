@@ -10,7 +10,7 @@ export async function createInterview(githubUrl: string) {
 
   const interview = await prisma.interview.create({
     data: {
-      githubMetadata: JSON.stringify(githubData),
+      githubMetadata: githubData,
       status: "Pre",
     },
   });
